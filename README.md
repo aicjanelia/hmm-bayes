@@ -4,3 +4,5 @@ Please refer to the included documentation "HMM-Bayes Documentation.pdf" for det
 
 The HMM-Bayes algorithm is described in detail in the publication:
 Monnier N, Barry Z, et al. 2015. Inferring transient particle transport dynamics in live cells. Nature Methods. doi:10.1038/nmeth.3483
+
+The originating code comes from [http://hmm-bayes.org](http://hmm-bayes.org)
