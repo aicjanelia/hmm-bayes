@@ -74,7 +74,11 @@ function TrackMateImport(csvPath,condition,maxK,minTrackLength)
 
     resultsGather = struct('PrM',[],'ML_states',[],'ML_params',[],'full_results',[],'logI',[],'track',[],'steps',[],'trackID',[]);
     for i=1:size(results,2)
-        r = results(i);
+        if (iscell(results))% This is a hack for when smpd is commented out
+            r = results{i};
+        else
+            r = results(i);
+        end
         for j=1:size(r,2)
             resultsGather(end+1) = r(j);
         end
@@ -83,7 +87,12 @@ function TrackMateImport(csvPath,condition,maxK,minTrackLength)
 
     exposureTimeGather = [];
     for i=1:size(exposureTime,2)
-        exposureTimeGather = [exposureTimeGather,exposureTime(i)];
+        if (iscell(exposureTime))% This is a hack for when smpd is commented out
+            e = exposureTime{i};
+        else
+            e = exposureTime(i);
+        end
+        exposureTimeGather = [exposureTimeGather,e];
     end
 
     resultsMask = arrayfun(@(x)(~isempty(x.PrM)),resultsGather);
