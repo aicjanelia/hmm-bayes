@@ -4,7 +4,7 @@ function TrackMateImport(csvPath,condition,maxK,minTrackLength)
 
     %minTrackLength = 15;
     locationError = 0.025; %estimated error of particle placement
-    mcmc_params.parallel = 'on'; % turn off if parallel is not available
+    mcmc_params.parallel = 'off'; % turn off if parallel is not available
     if (maxK==2)
         mcmc_params.nTrials = 250;
     elseif (maxK==3)
