@@ -130,9 +130,10 @@ else
         % Perform integration to get marginal likelihood
         nIntegration = 200000;
         res = hmm_integration_gaussian(steps,full_fitting(m).samples(ceil(full_fitting(m).mcmc_params_final.nIter/2):end),nIntegration,full_fitting(m).mcmc_params_final.Vstates);
-        logI(m) = res;
-        full_fitting(m).logI = logI(m);
-        
+        if (~isempty(res))
+            logI(m) = res;
+            full_fitting(m).logI = logI(m);
+        end
     end
 end
 
