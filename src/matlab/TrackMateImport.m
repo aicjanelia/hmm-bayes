@@ -1,10 +1,10 @@
 function TrackMateImport(csvPath,condition,maxK,minTrackLength)
-    [num,txt] = xlsread(csvPath);
+    [~,~,raw] = xlsread(csvPath);
     graphTitle = condition;
 
     %minTrackLength = 15;
     locationError = 0.025; %estimated error of particle placement
-    mcmc_params.parallel = 'off'; % turn off if parallel is not available
+    mcmc_params.parallel = 'off'; % turn off because the each track will be run in parallel 43
     if (maxK==2)
         mcmc_params.nTrials = 250;
     elseif (maxK==3)
@@ -17,17 +17,17 @@ function TrackMateImport(csvPath,condition,maxK,minTrackLength)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
     %% Convert data into input to hmm_bayes
-    trackIDcol = strcmpi(txt(1,:),'TRACK_ID');
-    xCol = strcmpi(txt(1,:),'EDGE_X_LOCATION');
-    yCol = strcmpi(txt(1,:),'EDGE_Y_LOCATION');
-    zCol = strcmpi(txt(1,:),'EDGE_Z_LOCATION');
-    timeCol = strcmpi(txt(1,:),'EDGE_TIME');
-
-    trackVals = num(:,trackIDcol);
-    xVals = num(:,xCol);
-    yVals = num(:,yCol);
-    zVals = num(:,zCol);
-    timeVals = num(:,timeCol);
+    trackIDcol = strcmpi(raw(1,:),'TRACK_ID');
+    xCol = strcmpi(raw(1,:),'EDGE_X_LOCATION');
+    yCol = strcmpi(raw(1,:),'EDGE_Y_LOCATION');
+    zCol = strcmpi(raw(1,:),'EDGE_Z_LOCATION');
+    timeCol = strcmpi(raw(1,:),'EDGE_TIME');
+    
+    trackVals = vertcat(raw{2:end,trackIDcol});
+    xVals = vertcat(raw{2:end,xCol});
+    yVals = vertcat(raw{2:end,yCol});
+    zVals = vertcat(raw{2:end,zCol});
+    timeVals = vertcat(raw{2:end,timeCol});
 
     trackIDs = unique(trackVals);
     %%
