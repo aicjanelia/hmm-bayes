@@ -109,11 +109,11 @@ function TrackMateImport(csvPath,condition,maxK,minTrackLength)
     if (isempty(d))
         d = '.';
     end
-%     sigs = [results.ML_params];
-%     sigs = horzcat(sigs.sigma_emit);
-%     Dcurr = (sigs.^2/2-locationError.^2)./mean(exposureTime);
-%     figure
-%     histogram(Dcurr,40);
+    sigs = [results.ML_params];
+    sigs = horzcat(sigs.sigma_emit);
+    Dcurr = (sigs.^2/2-locationError.^2)./mean(exposureTime);
+    figure
+    histogram(Dcurr,40);
 
     cfg.umperpx = 1;
     cfg.locerror = locationError;
