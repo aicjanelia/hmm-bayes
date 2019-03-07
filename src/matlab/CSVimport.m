@@ -140,6 +140,10 @@ function CSVimport(csvPath,condition,maxK,minTrackLength,trackStr,xStr,yStr,zStr
     Dcurr = (sigs.^2/2-locationError.^2)./mean(exposureTime);
     figure
     histogram(Dcurr,40);
+    
+    if (~exist(d,'dir'))
+        mkdir(d)
+    end
 
     cfg.umperpx = 1;
     cfg.locerror = locationError;
