@@ -9,8 +9,9 @@ function CSVimport(csvPath,condition,maxK,minTrackLength,trackStr,xStr,yStr,zStr
         umZmultiplier = 1;
     end
 
-    [~,~,raw] = xlsread(csvPath);
     graphTitle = condition;
+    
+    if fullfile(d,sprintf('%s_k%d',graphTitle,maxK))
 
     %minTrackLength = 15;
     locationError = 0.025; %estimated error of particle placement
@@ -21,38 +22,40 @@ function CSVimport(csvPath,condition,maxK,minTrackLength,trackStr,xStr,yStr,zStr
         mcmc_params.nTrials = 750;
     end
     %maxK = 2; %Number of models to fit
-
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %% end user changes
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
+    raw = csvread(csvPath,1,0);
+    fH = fopen(csvPath,'rt');
+    l = fgetl(fH);
+    fclose(fH);
+    tok = regexpi(l,',','split');
 
     %% Convert data into input to hmm_bayes
-    trackIDcol = strcmpi(raw(1,:),trackStr);
+    trackIDcol = strcmpi(tok,trackStr);
     if (~any(trackIDcol))
         error('Cannont find Track column');
     end
-    xCol = strcmpi(raw(1,:),xStr);
+    xCol = strcmpi(tok,xStr);
     if (~any(xCol))
         error('Cannont find X column');
     end
-    yCol = strcmpi(raw(1,:),yStr);
+    yCol = strcmpi(tok,yStr);
     if (~any(yCol))
         error('Cannont find Y column');
     end
-    zCol = strcmpi(raw(1,:),zStr);
+    zCol = strcmpi(tok,zStr);
     if (~any(zCol))
         error('Cannont find Z column');
     end
-    timeCol = strcmpi(raw(1,:),timeStr);
+    timeCol = strcmpi(tok,timeStr);
     if (~any(timeCol))
         error('Cannont find Time column');
     end
     
-    trackVals = vertcat(raw{2:end,trackIDcol});
-    xVals = vertcat(raw{2:end,xCol}).*umXYmultiplier;
-    yVals = vertcat(raw{2:end,yCol}).*umXYmultiplier;
-    zVals = vertcat(raw{2:end,zCol}).*umZmultiplier;
-    timeVals = vertcat(raw{2:end,timeCol});
+    trackVals = raw(:,trackIDcol);
+    xVals = raw(:,xCol).*umXYmultiplier;
+    yVals = raw(:,yCol).*umXYmultiplier;
+    zVals = raw(:,zCol).*umZmultiplier;
+    timeVals = raw(:,timeCol).*timeMultiplier;
 
     trackIDs = unique(trackVals);
     %%
@@ -125,7 +128,7 @@ function CSVimport(csvPath,condition,maxK,minTrackLength,trackStr,xStr,yStr,zStr
     mask = resultsMask & exposureTimeMask;
 
     results = resultsGather(mask);
-    exposureTime = exposureTimeGather(mask)*timeMultiplier;
+    exposureTime = exposureTimeGather(mask);
 
 %     delete(p);
 
