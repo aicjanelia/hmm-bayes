@@ -11,7 +11,17 @@ function CSVimport(csvPath,condition,maxK,minTrackLength,trackStr,xStr,yStr,zStr
 
     graphTitle = condition;
     
-    if fullfile(d,sprintf('%s_k%d',graphTitle,maxK))
+    [d,f,e] = fileparts(csvPath);
+    if (isempty(d))
+        d = '.';
+    end
+%     d = fullfile(d,[f,'_trackResults']);
+
+    if (exist(fullfile(d,sprintf('%s_k%d.mat',graphTitle,maxK)),'file'))
+        return
+    end    
+    
+    fprintf('%s...',f)
 
     %minTrackLength = 15;
     locationError = 0.025; %estimated error of particle placement
@@ -58,14 +68,20 @@ function CSVimport(csvPath,condition,maxK,minTrackLength,trackStr,xStr,yStr,zStr
     timeVals = raw(:,timeCol).*timeMultiplier;
 
     trackIDs = unique(trackVals);
+    trackMask = false(length(trackIDs),1);
+
+    for i=1:length(trackIDs)
+        trackMask(i) = sum(trackVals==trackIDs(i))>=minTrackLength;
+    end
+    trackIDs = trackIDs(trackMask);
     %%
 
     p = gcp();
-    maxWorkers = min(length(trackIDs),p.NumWorkers);
-    if (p~=0 && maxWorkers~=p.NumWorkers)
-        delete(p);
-        parpool(maxWorkers);
-    end
+%     maxWorkers = min(length(trackIDs),p.NumWorkers);
+%     if (p~=0 && maxWorkers~=p.NumWorkers)
+%         delete(p);
+%         parpool(maxWorkers);
+%     end
 
     prgs = Utils.CmdlnProgress(length(trackIDs),true,'Analyzing tracks');
     spmd
@@ -129,48 +145,6 @@ function CSVimport(csvPath,condition,maxK,minTrackLength,trackStr,xStr,yStr,zStr
 
     results = resultsGather(mask);
     exposureTime = exposureTimeGather(mask);
-
-%     delete(p);
-
-    %% Display results
-    [d,f,e] = fileparts(csvPath);
-    if (isempty(d))
-        d = '.';
-    end
-    d = fullfile(d,[f,'_trackResults']);
-    sigs = [results.ML_params];
-    sigs = horzcat(sigs.sigma_emit);
-    Dcurr = (sigs.^2/2-locationError.^2)./mean(exposureTime);
-    figure
-    histogram(Dcurr,40);
     
-    if (~exist(d,'dir'))
-        mkdir(d)
-    end
-
-    cfg.umperpx = 1;
-    cfg.locerror = locationError;
-    for i=1:length(results)
-        if (isempty(results(i).track))
-            continue
-        end
-
-        cfg.fs = 1/mean(exposureTime(i));
-
-        f = figure;
-        try
-            hmm_results_plot(cfg,results(i));
-            f.Units = 'normalized';
-            f.Position = [0,0,1,1];
-            name = sprintf('%s_k_%dTrack_%04d',graphTitle,maxK,results(i).trackID);
-            suptitle(name);
-            figData = getframe(f);
-            imwrite(figData.cdata,fullfile(d,[name,'.tif']));
-        catch err
-            warning('Problem plotting track:%d\n%s',results(i).trackID,err.message);
-        end
-        close(f);
-    end
-    
-    save(fullfile(d,sprintf('%s_k%d',graphTitle,maxK)),'results','exposureTime','locationError');
+    save(fullfile(d,sprintf('%s_k%d.mat',graphTitle,maxK)),'results','exposureTime','locationError');
 end
