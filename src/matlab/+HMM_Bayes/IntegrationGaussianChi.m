@@ -1,4 +1,4 @@
-function logI = hmm_integration_gaussian(obs,samples_mcmc,N,Vstates)
+function logI = IntegrationGaussianChi(obs,d,samples_mcmc,N,Vstates)
 %%%%%%%%%%%%%%%%%%%%
 % Calculates the numerical integral of the likelihood of the HMM
 % observations by Monte Carlo sampling, where the sampling distribution is
@@ -7,18 +7,17 @@ function logI = hmm_integration_gaussian(obs,samples_mcmc,N,Vstates)
 % sampling for the probabilities (from a uniform simplex).
 %
 % Number of Gaussian parameters:
-%   K' * d  : emission probability means (where K' is the number of nonzero V states)
-%   K       : emission probability standard deviations
+%   K'    : emission probability means (where K' is the number of nonzero V states)
+%   K     : emission probability standard deviations
 %
 %%%%%%%%%%%%%%%%%%%%
 % Copyright MIT 2015
 % Laboratory for Computational Biology & Biophysics
 %%%%%%%%%%%%%%%%%%%%
 
-
 %tic
 
-[d K] = size(samples_mcmc(1).mu_emit);
+K = length(samples_mcmc(1).mu_emit);
 Vnonzero = find(Vstates~=0);
 
 % Find the Gaussian approximation for the MCMC sampled distributions of
@@ -29,15 +28,11 @@ mu_emit_stdevs = [];
 sigma_emit_means = [];
 sigma_emit_stdevs = [];
 
-for col = Vnonzero  % emission means
+for p = Vnonzero  % emission means
 
-    for row = 1:d
-
-        list = struct2vector(samples_mcmc,'mu_emit',row,col);
-        mu_emit_means(end+1) = mean(list);
-        mu_emit_stdevs(end+1) = std(list);
-        
-    end
+    list = struct2vector(samples_mcmc,'mu_emit',p);
+    mu_emit_means(end+1) = mean(list);
+    mu_emit_stdevs(end+1) = std(list);
 
 end
 
@@ -54,9 +49,10 @@ end
 % Generate N samples from the Gaussian approximations
 
 if ~isempty(Vnonzero)
-    samples_mu = randn(N,length(Vnonzero)*d);
+    samples_mu = randn(N,length(Vnonzero));
     samples_mu = bsxfun(@times,samples_mu,mu_emit_stdevs);
     samples_mu = bsxfun(@plus,samples_mu,mu_emit_means);
+    samples_mu = abs(samples_mu);
 end
 
 samples_sigma = randn(N,K);
@@ -80,9 +76,9 @@ for i=1:N
         p_trans(j,:) = sample_simplex(K);
     end
     
-    mu_emit = zeros(d,K);
+    mu_emit = zeros(1,K);
     if ~isempty(Vnonzero)
-        mu_emit(:,Vnonzero) = reshape(samples_mu(i,:),d,length(Vnonzero));
+        mu_emit(Vnonzero) = samples_mu(i,:);
     end
     sigma_emit = samples_sigma(i,:);
     
@@ -91,17 +87,19 @@ for i=1:N
     if iscell(obs)
         logprob = 0;
         for j=1:length(obs)
-            logprob = logprob + hmm_forward(obs{j},p_start,p_trans,mu_emit,sigma_emit);
+            logprob = logprob + HMM_Bayes.ForwardChi(obs{j},d,p_start,p_trans,mu_emit,sigma_emit);
         end
     else
-        logprob = hmm_forward(obs,p_start,p_trans,mu_emit,sigma_emit);
+        logprob = HMM_Bayes.ForwardChi(obs,d,p_start,p_trans,mu_emit,sigma_emit);
     end
     
     
     % Find the sampling distribution pdf at this sampled point:
     
-    if ~isempty(Vnonzero)
-        mu_pdf = 1/((2*pi)^(length(Vnonzero)*d/2)*prod(mu_emit_stdevs)) * exp(-sum(((samples_mu(i,:)-mu_emit_means)./mu_emit_stdevs).^2)/2);
+    if ~isempty(Vnonzero) % mu pdf is f(x)+f(-x) (because of abs function when sampling mu above)
+        for j = 1:length(Vnonzero)
+            mu_pdf(j) = 1/(sqrt(2*pi)*mu_emit_stdevs(j)) * (exp(-(((samples_mu(i,j)-mu_emit_means(j))/mu_emit_stdevs(j))^2)/2) + exp(-(((-samples_mu(i,j)-mu_emit_means(j))/mu_emit_stdevs(j))^2)/2));
+        end
     else
         mu_pdf = 1;
     end
@@ -110,7 +108,7 @@ for i=1:N
         sigma_pdf(j) = 1/(sqrt(2*pi)*sigma_emit_stdevs(j)) * (exp(-(((samples_sigma(i,j)-sigma_emit_means(j))/sigma_emit_stdevs(j))^2)/2) + exp(-(((-samples_sigma(i,j)-sigma_emit_means(j))/sigma_emit_stdevs(j))^2)/2));
     end
     
-    sample_pdf = simplex_pdf * mu_pdf * prod(sigma_pdf);
+    sample_pdf = simplex_pdf * prod(mu_pdf) * prod(sigma_pdf);
     
     
     % Ratio of likelihood to sampling pdf

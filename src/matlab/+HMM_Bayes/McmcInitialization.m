@@ -1,4 +1,4 @@
-function [best_sample, best_mcmc_params, samples, logprobs] = hmm_mcmc_initialization(obs,K,mu_range,sigma_max,mcmc_params)
+function [best_sample, best_mcmc_params, samples, logprobs] = McmcInitialization(obs,K,mu_range,sigma_max,mcmc_params)
 %%%%%%%%%%%%%%%%%%%%
 % Tests a series of random initializations of MCMC sampling of the
 % parameter space of an HMM, to find the best starting parameters
@@ -29,7 +29,7 @@ if isfield(mcmc_params,'nTrials')
     nTrials = mcmc_params.nTrials;
 elseif K==1
     nTrials = 5;
-elseif K>2 && strfind(which('hmm_forward'),'mex')
+elseif K>2 && strfind(which('HMM_Bayes.Forward'),'mex')
     nTrials = 500;
 else
     nTrials = 100;
@@ -62,7 +62,7 @@ for i=1:nTrials
     sigma_emit = rand(1,K) * sigma_max;
 
     % Run MCMC trial
-    [samples{i}, logprobs{i}, accept_rate] = hmm_mcmc(obs,p_start,p_trans,mu_emit,sigma_emit,mcmc_params_all{i});
+    [samples{i}, logprobs{i}, accept_rate] = HMM_Bayes.Mcmc(obs,p_start,p_trans,mu_emit,sigma_emit,mcmc_params_all{i});
     
     % Update delta parameters if necessary (but don't allow them to grow larger than the range/4)
     mcmc_params_all{i+1} = mcmc_params_all{i};

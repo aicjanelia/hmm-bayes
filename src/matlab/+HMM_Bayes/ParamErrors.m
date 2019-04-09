@@ -1,4 +1,4 @@
-function errors = hmm_param_errors(samples_mcmc,Vstates)
+function errors = ParamErrors(samples_mcmc,Vstates)
 %%%%%%%%%%%%%%%%%%%%
 % Calculates standard deviations in parameter values from an MCMC
 % run (samples_mcmc).
@@ -17,7 +17,7 @@ errors = struct;
 
 for p = 1:K  % starting probabilities
     
-    list = struct2vector(samples_mcmc,'p_start',p);
+    list = HMM_Bayes.StructToVector(samples_mcmc,'p_start',p);
     errors.p_start(p) = std(list);
   
 end
@@ -27,7 +27,7 @@ for col = 1:K  % transition probabilities
 
     for row = 1:K
 
-        list = struct2vector(samples_mcmc,'p_trans',row,col);
+        list = HMM_Bayes.StructToVector(samples_mcmc,'p_trans',row,col);
         errors.p_trans(row,col) = std(list);
         
     end
@@ -41,7 +41,7 @@ for col = Vnonzero  % emission means
 
     for row = 1:d
 
-        list = struct2vector(samples_mcmc,'mu_emit',row,col);
+        list = HMM_Bayes.StructToVector(samples_mcmc,'mu_emit',row,col);
         errors.mu_emit(row,col) = std(list);
         
     end
@@ -51,7 +51,7 @@ end
 
 for p = 1:K  % standard deviations
     
-    list = struct2vector(samples_mcmc,'sigma_emit',p);
+    list = HMM_Bayes.StructToVector(samples_mcmc,'sigma_emit',p);
     errors.sigma_emit(p) = std(list);
   
 end

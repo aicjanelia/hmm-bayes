@@ -1,13 +1,13 @@
-function hmm_results_plot(varargin)
+function ResultsPlot(varargin)
 % HMM_RESULTS Master function for plotting the results of the HMM analysis.
 % Call this function with the output of HMM-Bayes stored in the result
 % input variable. cfg stores the parameters of your movie. See
-% hmm_skeleton.m for examples of how to create these structures from your
+% HMM_Bayes.Skeleton.m for examples of how to create these structures from your
 % movie info and the output of the HMM.
 %
 % INPUTS:
 % cfg,result - config and result structures as demonstrated in
-% hmm_skeleton.m
+% HMM_Bayes.Skeleton.m
 %
 % OR
 %
@@ -77,7 +77,7 @@ function hmm_results_plot(varargin)
     % Generate a color map for coloring the trajectory, state sequence, etc
     % to map pieces back to the states they originated from.
     
-    cmap = distinguishable_colors(max(ML_states));
+    cmap = HMM_Bayes.DistinguishableColors(max(ML_states));
     color_idcs = color_idcs + 1; % Shift everything so indices start at 1 instead of 0.
     
     % Go in sequence drawing the subplots. See individual functions (lower
@@ -105,7 +105,7 @@ function draw_track(track,ML_states,cmap)
     % the colormap in the above section. Each color comes from the
     % ML_states vector.
     
-    cline(track(1,:),track(2,:),zeros(1,numel(track(1,:))),ML_states,cmap,2);
+    HMM_Bayes.Cline(track(1,:),track(2,:),zeros(1,numel(track(1,:))),ML_states,cmap,2);
     
     xmin = min(track(1,:));
     xmax = max(track(1,:));
@@ -130,7 +130,7 @@ function draw_mlstates(ML_states,fs,cmap)
     % which is colored according to the state it falls into.
     
     for i = 1:numel(ML_states)
-        cline([i-1 i]/fs,[1 1],[0 0],1,cmap(ML_states(i),:),12);
+        HMM_Bayes.Cline([i-1 i]/fs,[1 1],[0 0],1,cmap(ML_states(i),:),12);
     end
     
     xlabel('Time (sec)')
@@ -151,7 +151,7 @@ function draw_modelprobs(PrM)
     ylabel('Model probability')
     labels = {'D','DV','D, D','D, DV','DV, DV','D, D, D','D, D, DV','D, DV, DV','DV, DV, DV'};
     set(gca,'XTickLabel',labels)
-    rotateXLabels( gca(), 45 )
+    HMM_Bayes.RotateXLabels( gca(), 45 )
 end
 
 function draw_text(ML_states, ML_params, fs, umperpx, cmap, locerror)
@@ -250,14 +250,14 @@ function draw_pdf(steps,ML_states,ML_params,umperpx,cmap)
         plot(tempsteps(1,:),tempsteps(2,:),'.','Color',cmap(i,:))
     end
     
-    freezeColors();
+    HMM_Bayes.FreezeColors();
     
     % Overlay PDF contour plot on top
     
     mu = ML_params.mu_emit * umperpx;
     sigma = ML_params.sigma_emit * umperpx;
 
-    draw_std(mu,sigma,cmap);
+    HMM_Bayes.DrawStd(mu,sigma,cmap);
     
     % draw lines showing where 0 is
     
@@ -271,7 +271,7 @@ function draw_pdf(steps,ML_states,ML_params,umperpx,cmap)
     ylabel('\Deltay (\mum)')
     title('Trajectory displacements')
     
-    freezeColors();
+    HMM_Bayes.FreezeColors();
 end
 
 function draw_stephist(steps,ML_states,cmap)

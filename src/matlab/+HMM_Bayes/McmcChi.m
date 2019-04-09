@@ -1,13 +1,16 @@
-function [samples, logprobs, accept_rate] = hmm_mcmc(obs,guess_p_start,guess_p_trans,guess_mu_emit,guess_sigma_emit,mcmc_params)
+function [samples logprobs accept_rate] = McmcChi(obs,d,guess_p_start,guess_p_trans,guess_mu_emit,guess_sigma_emit,mcmc_params)
 %%%%%%%%%%%%%%%%%%%%
 % Performs Markov Chain Monte Carlo sampling of the parameter space of an
 % HMM
 %
-% obs - dxT vector/matrix of observations (for d-dimensional data)
+% obs - 1xT vector of observations (squared displacement magnitudes)
 %       (or a cell of such observations)
+% d - number of dimensions in original data
 % guess_p_start - 1xK vector of starting probabilities for K states
 % guess_p_trans - KxK matrix of transition probabilities for K states
-% guess_mu_emit - dxK vector/matrix of emission probability means
+% guess_mu_emit - 1xK vector of emission probability means
+%               (the mean parameter for a chi distribution is the magnitude
+%               of the vector of means of its gaussian components)
 % guess_sigma_emit - 1xK vector of emission probability standard deviations
 %
 % mcmc_params:
@@ -41,10 +44,10 @@ samples(1).sigma_emit = guess_sigma_emit;
 logprobs = zeros(1,mcmc_params.nIter);
 if iscell(obs)
     for i=1:length(obs)
-        logprobs(1) = logprobs(1) + hmm_forward(obs{i},samples(1).p_start,samples(1).p_trans,samples(1).mu_emit,samples(1).sigma_emit);
+        logprobs(1) = logprobs(1) + HMM_Bayes.ForwardChi(obs{i},d,samples(1).p_start,samples(1).p_trans,samples(1).mu_emit,samples(1).sigma_emit);
     end
 else
-    logprobs(1) = hmm_forward(obs,samples(1).p_start,samples(1).p_trans,samples(1).mu_emit,samples(1).sigma_emit);
+    logprobs(1) = HMM_Bayes.ForwardChi(obs,d,samples(1).p_start,samples(1).p_trans,samples(1).mu_emit,samples(1).sigma_emit);
 end
 
 % Keep track of acceptance rate
@@ -74,29 +77,29 @@ end
 % Loop
 for i=2:mcmc_params.nIter
     
-    mcmc_params.delta_p_start = min(samples(i-1).p_start)/2;
-    mcmc_params.delta_p_trans = min(min(samples(i-1).p_trans))/2;
-
     % Step 1: Propose a move
     if strcmp(mcmc_params.move,'single')
-        [samples(i) reject selection] = update_single(samples(i-1),mcmc_params,f);
+        [samples(i) reject selection] = update_single_chi(samples(i-1),mcmc_params,f);
         accept.(selection)(end+1) = 1;
     elseif strcmp(mcmc_params.move,'block')
-        [samples(i) reject selection] = update_block(samples(i-1),mcmc_params,f);
+        [samples(i) reject selection] = update_block_chi(samples(i-1),mcmc_params,f);
         accept.(selection)(end+1) = 1;
     elseif strcmp(mcmc_params.move,'all')
-        [samples(i) reject] = update_all(samples(i-1),mcmc_params,f);
+        [samples(i) reject] = update_all_chi(samples(i-1),mcmc_params,f);
     end
+  
     
     % Step 2: Accept or reject move using the Metropolis method
     if ~reject
         
+%         tic
+        
         if iscell(obs)
             for j=1:length(obs)
-                logprobs(i) = logprobs(i) + hmm_forward(obs{j},samples(i).p_start,samples(i).p_trans,samples(i).mu_emit,samples(i).sigma_emit);
+                logprobs(i) = logprobs(i) + HMM_Bayes.ForwardChi(obs{j},d,samples(i).p_start,samples(i).p_trans,samples(i).mu_emit,samples(i).sigma_emit);
             end
         else
-            logprobs(i) = hmm_forward(obs,samples(i).p_start,samples(i).p_trans,samples(i).mu_emit,samples(i).sigma_emit);
+            logprobs(i) = HMM_Bayes.ForwardChi(obs,d,samples(i).p_start,samples(i).p_trans,samples(i).mu_emit,samples(i).sigma_emit);
         end
         
         if isnan(logprobs(i))
@@ -105,7 +108,12 @@ for i=2:mcmc_params.nIter
             reject = 1;
         end
         
+%         toc
+%         disp(samples(i))
+%         disp(logprobs(i))
+        
     end
+
     
     if reject
         samples(i) = samples(i-1);
@@ -139,12 +147,11 @@ end
 
 
 
-function [new reject selection] = update_single(old,mcmc_params,f)
+function [new reject selection] = update_single_chi(old,mcmc_params,f)
 
 reject = 0;
 
 K = length(old.p_start);
-d = size(old.mu_emit,1);
 Vnonzero = find(mcmc_params.Vstates~=0);
 
 new = old;
@@ -152,9 +159,9 @@ new = old;
 % Number of parameters:
 %   K       : starting probabilities (K-length vector that sums to 1)
 %   K^2     : transition probabilities (KxK matrix where each row sums to 1)
-%   K' * d  : emission probability means (where K' is the number of nonzero V states)
+%   K'      : emission probability means (where K' is the number of nonzero V states)
 %   K       : emission probability standard deviations
-nParams = K + K^2 + length(Vnonzero)*d + K;
+nParams = K + K^2 + length(Vnonzero) + K;
 
 % Randomly choose a parameter to move
 p = randi(nParams,1);
@@ -196,21 +203,23 @@ elseif p <= K + K^2  % move a transition probability
     selection = 'p_trans';
     
     
-elseif p <= K + K^2 + length(Vnonzero)*d  % move an emission mean
+elseif p <= K + K^2 + length(Vnonzero)  % move an emission mean
     
     p = p - (K + K^2);
-    row = ceil(p/length(Vnonzero));
-    col = mod(p-1,length(Vnonzero))+1;
-    col = Vnonzero(col);
     
-    new.mu_emit(row,col) = old.mu_emit(row,col) + f(1)*mcmc_params.delta_mus;
+    new.mu_emit(Vnonzero(p)) = old.mu_emit(Vnonzero(p)) + f(1)*mcmc_params.delta_mus;
+    
+    % Reject moves below 0 (since mean parameter for a chi distribution is a magnitude)
+    if new.mu_emit(Vnonzero(p))<0
+        reject = 1;
+    end
     
     selection = 'mu_emit';
     
     
 else  % move an emission standard deviation
     
-    p = p - (K + K^2 + length(Vnonzero)*d);
+    p = p - (K + K^2 + length(Vnonzero));
     
     new.sigma_emit(p) = old.sigma_emit(p) + f(1)*mcmc_params.delta_sigmas;
     
@@ -229,12 +238,11 @@ end
 
 
 
-function [new reject selection] = update_block(old,mcmc_params,f)
+function [new reject selection] = update_block_chi(old,mcmc_params,f)
 
 reject = 0;
 
 K = length(old.p_start);
-d = size(old.mu_emit,1);
 Vnonzero = find(mcmc_params.Vstates~=0);
 
 new = old;
@@ -242,7 +250,7 @@ new = old;
 % Number of parameters:
 %   K       : starting probabilities (K-length vector that sums to 1)
 %   K^2     : transition probabilities (KxK matrix where each row sums to 1)
-%   K' * d  : emission probability means (where K' is the number of nonzero V states)
+%   K'      : emission probability means (where K' is the number of nonzero V states)
 %   K       : emission probability standard deviations
 
 % Number of blocks = 3 (probabilities, means, standard deviations)
@@ -313,14 +321,15 @@ elseif b == 2  % move all the emission standard deviations
     
 elseif b == 3  % move all the emission means
 
-    for p = 1:length(Vnonzero)*d  
+    for p = 1:length(Vnonzero)  
 
-        row = ceil(p/length(Vnonzero));
-        col = mod(p-1,length(Vnonzero))+1;
-        col = Vnonzero(col);
-    
-        new.mu_emit(row,col) = old.mu_emit(row,col) + f(1)*mcmc_params.delta_mus;
+        new.mu_emit(Vnonzero(p)) = old.mu_emit(Vnonzero(p)) + f(1)*mcmc_params.delta_mus;
 
+        % Reject moves below 0 (since mean parameter for a chi distribution is a magnitude)
+        if new.mu_emit(Vnonzero(p))<0
+            reject = 1;
+        end
+        
     end
     
     selection = 'mu_emit';
@@ -336,12 +345,11 @@ end
 
 
 
-function [new reject] = update_all(old,mcmc_params,f)
+function [new reject] = update_all_chi(old,mcmc_params,f)
 
 reject = 0;
 
 K = length(old.p_start);
-d = size(old.mu_emit,1);
 Vnonzero = find(mcmc_params.Vstates~=0);
 
 new = old;
@@ -349,7 +357,7 @@ new = old;
 % Number of parameters:
 %   K       : starting probabilities (K-length vector that sums to 1)
 %   K^2     : transition probabilities (KxK matrix where each row sums to 1)
-%   K' * d  : emission probability means (where K' is the number of nonzero V states)
+%   K'      : emission probability means (where K' is the number of nonzero V states)
 %   K       : emission probability standard deviations
 
 
@@ -389,13 +397,14 @@ for row = 1:K  % move all the transition probabilities
 end
     
     
-for p = 1:length(Vnonzero)*d  % move all the emission means
+for p = 1:length(Vnonzero)  % move all the emission means
     
-    row = ceil(p/length(Vnonzero));
-    col = mod(p-1,length(Vnonzero))+1;
-    col = Vnonzero(col);
+    new.mu_emit(Vnonzero(p)) = old.mu_emit(Vnonzero(p)) + f(1)*mcmc_params.delta_mus;
     
-    new.mu_emit(row,col) = old.mu_emit(row,col) + f(1)*mcmc_params.delta_mus;
+    % Reject moves below 0 (since mean parameter for a chi distribution is a magnitude)
+    if new.mu_emit(Vnonzero(p))<0
+        reject = 1;
+    end
     
 end
     

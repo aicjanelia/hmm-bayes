@@ -1,4 +1,4 @@
-function log_obs_prob = hmm_forward(obs,p_start,p_trans,mu_emit,sigma_emit)
+function log_obs_prob = Forward(obs,p_start,p_trans,mu_emit,sigma_emit)
 %%%%%%%%%%%%%%%%%%%%
 % Performs the forward algorithm to calculate the log probability of the
 % sequence of observations given the HMM parameters, assuming the emission

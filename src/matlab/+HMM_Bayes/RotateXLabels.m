@@ -1,4 +1,4 @@
-function hh = rotateXLabels( ax, angle, varargin )
+function hh = RotateXLabels( ax, angle, varargin )
 
 %%% !!!!!!! MOD: Does not return hh for matlab version 2014b and later.
 

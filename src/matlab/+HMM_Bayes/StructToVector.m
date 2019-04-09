@@ -1,4 +1,4 @@
-function list = struct2vector(structure,field,varargin)
+function list = StructToVector(structure,field,varargin)
 
 list = reshape([structure.(field)],[size(structure(1).(field)) length(structure)]);
 

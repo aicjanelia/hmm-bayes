@@ -5,7 +5,7 @@
 %
 % DBE 09/03/02
 
-function h=cline(x,y,z,c,cmap,linewidth)
+function h=Cline(x,y,z,c,cmap,linewidth)
 
 if ~exist('linewidth','var')
     linewidth = 1;

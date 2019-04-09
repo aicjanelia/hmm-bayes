@@ -1,4 +1,4 @@
-function [best_sample mcmc_params samples logprobs] = hmm_mcmc_initialization_chi(obs,d,K,mu_max,sigma_max,mcmc_params)
+function [best_sample mcmc_params samples logprobs] = McmcInitializationChi(obs,d,K,mu_max,sigma_max,mcmc_params)
 %%%%%%%%%%%%%%%%%%%%
 % Tests a series of random initializations of MCMC sampling of the
 % parameter space of an HMM, to find the best starting parameters
@@ -61,7 +61,7 @@ for i=1:nTrials
     
     sigma_emit = rand(1,K) * sigma_max;
 
-    [samples{i} logprobs{i} accept_rate] = hmm_mcmc_chi(obs,d,p_start,p_trans,mu_emit,sigma_emit,mcmc_params);
+    [samples{i} logprobs{i} accept_rate] = HMM_Bayes.McmcChi(obs,d,p_start,p_trans,mu_emit,sigma_emit,mcmc_params);
     
     %figure, plot(logprobs{i})
     

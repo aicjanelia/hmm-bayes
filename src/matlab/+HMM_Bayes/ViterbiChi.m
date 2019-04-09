@@ -1,4 +1,4 @@
-function states = hmm_viterbi_chi(obs,d,p_start,p_trans,mu_emit,sigma_emit)
+function states = ViterbiChi(obs,d,p_start,p_trans,mu_emit,sigma_emit)
 %%%%%%%%%%%%%%%%%%%%
 % Performs the Viterbi algorithm to calculate the most likely sequence of
 % hidden states given the HMM parameters and the sequence of observations,

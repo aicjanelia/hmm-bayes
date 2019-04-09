@@ -1,4 +1,4 @@
-function p = sample_simplex(n)
+function p = SampleSimplex(n)
 %%%%%%%%%%%%%%%%%%%%
 % Uniformly samples from an n-dimensional simplex with parameters p_1...p_n
 % where: 0<p_i<1 and sum(p_i)=1 (e.g. probabilities)

@@ -1,4 +1,4 @@
-function [PrM, ML_states, ML_params, full_results, full_fitting] = hmm_process_dataset_chi(steps,Kmax,mcmc_params)
+function [PrM, ML_states, ML_params, full_results, full_fitting] = ProcessDatasetChi(steps,Kmax,mcmc_params)
 %%%%%%%%%%%%%%%%%%%%
 % Performs chi-squared HMM-Bayes analysis of a timeseries of displacements
 % (steps) from a particle trajectory.
@@ -105,15 +105,15 @@ if isfield(mcmc_params,'parallel') && strcmp(mcmc_params.parallel,'on')
         full_fitting(m).mcmc_params_final.Vstates = Vstates_list{m};
 
         % Run initializations with different starting parameters
-        [best_sample, full_fitting(m).mcmc_params_final] = hmm_mcmc_initialization_chi(obs,d,K,mu_max,sigma_max,full_fitting(m).mcmc_params_final);
+        [best_sample, full_fitting(m).mcmc_params_final] = HMM_Bayes.Mcmc_initializationChi(obs,d,K,mu_max,sigma_max,full_fitting(m).mcmc_params_final);
 
         % Run a longer MCMC trajectory with the best starting parameters
         full_fitting(m).mcmc_params_final.nIter = 100000;
-        [full_fitting(m).samples, full_fitting(m).logprobs] = hmm_mcmc_chi(obs,d,best_sample.p_start,best_sample.p_trans,best_sample.mu_emit,best_sample.sigma_emit,full_fitting(m).mcmc_params_final);
+        [full_fitting(m).samples, full_fitting(m).logprobs] = HMM_Bayes.McmcChi(obs,d,best_sample.p_start,best_sample.p_trans,best_sample.mu_emit,best_sample.sigma_emit,full_fitting(m).mcmc_params_final);
 
         % Perform integration to get marginal likelihood
         nIntegration = 200000;
-        logI(m) = hmm_integration_gaussian_chi(obs,d,full_fitting(m).samples(ceil(full_fitting(m).mcmc_params_final.nIter/2):end),nIntegration,full_fitting(m).mcmc_params_final.Vstates);
+        logI(m) = HMM_Bayes.Integration_gaussianChi(obs,d,full_fitting(m).samples(ceil(full_fitting(m).mcmc_params_final.nIter/2):end),nIntegration,full_fitting(m).mcmc_params_final.Vstates);
         full_fitting(m).logI = logI(m);
         
     end
@@ -128,15 +128,15 @@ else
         full_fitting(m).mcmc_params_final.Vstates = Vstates_list{m};
 
         % Run initializations with different starting parameters
-        [best_sample, full_fitting(m).mcmc_params_final] = hmm_mcmc_initialization_chi(obs,d,K,mu_max,sigma_max,full_fitting(m).mcmc_params_final);
+        [best_sample, full_fitting(m).mcmc_params_final] = HMM_Bayes.Mcmc_initializationChi(obs,d,K,mu_max,sigma_max,full_fitting(m).mcmc_params_final);
 
         % Run a longer MCMC trajectory with the best starting parameters
         full_fitting(m).mcmc_params_final.nIter = 100000;
-        [full_fitting(m).samples, full_fitting(m).logprobs] = hmm_mcmc_chi(obs,d,best_sample.p_start,best_sample.p_trans,best_sample.mu_emit,best_sample.sigma_emit,full_fitting(m).mcmc_params_final);
+        [full_fitting(m).samples, full_fitting(m).logprobs] = HMM_Bayes.McmcChi(obs,d,best_sample.p_start,best_sample.p_trans,best_sample.mu_emit,best_sample.sigma_emit,full_fitting(m).mcmc_params_final);
 
         % Perform integration to get marginal likelihood
         nIntegration = 200000;
-        logI(m) = hmm_integration_gaussian_chi(obs,d,full_fitting(m).samples(ceil(full_fitting(m).mcmc_params_final.nIter/2):end),nIntegration,full_fitting(m).mcmc_params_final.Vstates);
+        logI(m) = HMM_Bayes.Integration_gaussianChi(obs,d,full_fitting(m).samples(ceil(full_fitting(m).mcmc_params_final.nIter/2):end),nIntegration,full_fitting(m).mcmc_params_final.Vstates);
         full_fitting(m).logI = logI(m);
         
     end
@@ -154,7 +154,7 @@ for m=1:nModels
     full_results(m).ML_params = full_fitting(m).samples(ML_idx);
 
     % Uncertainty in ML parameters
-    full_results(m).ML_params_error = hmm_param_errors(full_fitting(m).samples(ceil(full_fitting(m).mcmc_params_final.nIter/2):end),full_fitting(m).mcmc_params_final.Vstates);
+    full_results(m).ML_params_error = HMM_Bayes.ParamErrors(full_fitting(m).samples(ceil(full_fitting(m).mcmc_params_final.nIter/2):end),full_fitting(m).mcmc_params_final.Vstates);
 
     % Order D states from lowest to highest D and then DV states from lowest to highest V magnitude
     [full_results(m).ML_params, full_results(m).ML_params_error] = order_states(full_results(m).ML_params, full_results(m).ML_params_error);
@@ -163,10 +163,10 @@ for m=1:nModels
     if iscell(steps)
         full_results(m).ML_states = cell(size(steps));
         for i=1:length(steps)
-            full_results(m).ML_states{i} = hmm_viterbi_chi(obs{i},d,full_results(m).ML_params.p_start,full_results(m).ML_params.p_trans,full_results(m).ML_params.mu_emit,full_results(m).ML_params.sigma_emit);
+            full_results(m).ML_states{i} = HMM_Bayes.ViterbiChi(obs{i},d,full_results(m).ML_params.p_start,full_results(m).ML_params.p_trans,full_results(m).ML_params.mu_emit,full_results(m).ML_params.sigma_emit);
         end
     else
-        full_results(m).ML_states = hmm_viterbi_chi(obs,d,full_results(m).ML_params.p_start,full_results(m).ML_params.p_trans,full_results(m).ML_params.mu_emit,full_results(m).ML_params.sigma_emit);
+        full_results(m).ML_states = HMM_Bayes.ViterbiChi(obs,d,full_results(m).ML_params.p_start,full_results(m).ML_params.p_trans,full_results(m).ML_params.mu_emit,full_results(m).ML_params.sigma_emit);
     end
 
 end

@@ -1,4 +1,4 @@
-function hmm_skeleton()
+function Skeleton()
 % HMM_SKELETON An example file demonstrating how to create a matrix of
 % displacements from a trajectory, initialize HMM parameters, run the HMM
 % on that series of displacements, and then plot the result.
@@ -29,7 +29,7 @@ function hmm_skeleton()
     % routine and later analysis.
     
     [results.PrM, results.ML_states, results.ML_params, results.full_results, full_fitting, results.logI]...
-        = hmm_process_dataset(steps,maxK,mcmc_params);
+        = HMM_Bayes.ProcessDataset(steps,maxK,mcmc_params);
     
     results.track = track;
     results.steps = steps;
@@ -45,5 +45,5 @@ function hmm_skeleton()
 
     % Run the plotting algorithm
     
-    hmm_results_plot(cfg,results);
+    HMM_Bayes.ResultsPlot(cfg,results);
 end
