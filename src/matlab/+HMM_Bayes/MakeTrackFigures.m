@@ -41,7 +41,7 @@ function MakeTrackFigures(matPath,outPath)
         [~,l] = max(tracks.results(i).PrM);
 
         f = figure;
-%         try
+        try
             HMM_Bayes.ResultsPlot(cfg,tracks.results(i));
             f.Units = 'normalized';
             f.Position = [0,0,1,1];
@@ -50,9 +50,9 @@ function MakeTrackFigures(matPath,outPath)
             figData = getframe(f);
             name = sprintf('%s_Track%04d_States%s',graphTitle,tracks.results(i).trackID,labels{l});
             imwrite(figData.cdata,fullfile(outPath,[name,'.tif']));
-%         catch err
-%             warning('Problem plotting track:%d\n%s',tracks.results(i).trackID,err.message);
-%         end
+        catch err
+            warning('Problem plotting track:%d\n%s',tracks.results(i).trackID,err.message);
+        end
         close(f);
     end
 end
