@@ -38,7 +38,7 @@ function [trackData,results,locationError] = Run(trackData,maxK,minTrackLength,l
         timeDeltas = timeStamps(2:end)-timeStamps(1:end-1);
         exposureTime(i) = max(timeDeltas);
         if (abs(exposureTime(i)-min(timeDeltas))>1e-4)
-            warning('There was inconsistencies in exposure for track %d',trackIDs(i));
+            warning('There was inconsistencies in exposure for track %d',curTrack.trackID);
             prgs.StopUsingBackspaces(); % the warning message has messed with printing progress
         end
         
