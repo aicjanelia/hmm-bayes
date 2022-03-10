@@ -46,6 +46,7 @@ function [trackData,results,locationError] = Run(trackData,maxK,minTrackLength,l
         
         prgs.PrintProgress(i);
     end
+    prgs.ClearProgress(true);
 
     for i=1:length(usedMask)
         if (~usedMask(i))
@@ -61,6 +62,11 @@ function [trackData,results,locationError] = Run(trackData,maxK,minTrackLength,l
         trackData(i).dConst = dConsts;
         states = curResults(I).ML_states;
         
+        if ~isfield(trackData, 'steps_xyz') || isempty(trackData(i).steps_xyz)
+            steps_xyz = trackData(i).pos_xyz(2:end, :) - trackData(i).pos_xyz(1:end-1, :);
+            trackData(i).steps_xyz = steps_xyz;
+        end
+
         for j=1:size(trackData(i).steps_xyz,1)
             trackData(i).velocity(j) = norm(trackData(i).steps_xyz(j,:));
             state = states(j);
