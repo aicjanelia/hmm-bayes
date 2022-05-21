@@ -1,4 +1,4 @@
-function [params_ordered, errors_ordered] = order_states(params, errors)
+function [params_ordered, errors_ordered] = OrderStates(params, errors)
 %%%%%%%%%%%%%%%%%%%%
 % Orders the states from an HMM-Bayes run based on their parameters.
 % D states (no V) come first, ordered from largest to smallest D value
